@@ -4,6 +4,9 @@ import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
 import software.amazon.awscdk.services.apigateway.*;
+import software.amazon.awscdk.services.dynamodb.ITable;
+import software.amazon.awscdk.services.dynamodb.Table;
+import software.amazon.awscdk.services.dynamodb.TableAttributes;
 import software.amazon.awscdk.services.lambda.Code;
 import software.amazon.awscdk.services.lambda.Function;
 import software.amazon.awscdk.services.lambda.Runtime;
@@ -21,6 +24,14 @@ public class ProductServiceStack extends Stack {
     public ProductServiceStack(final Construct scope, final String id, final StackProps props) {
         super(scope, id, props);
 
+        ITable productsTable = Table.fromTableAttributes(this, "ProductsTable", TableAttributes.builder()
+                .tableName("Products")
+                .build());
+
+        ITable stocksTable = Table.fromTableAttributes(this, "StocksTable", TableAttributes.builder()
+                .tableName("Stocks")
+                .build());
+
         Function getProductsFunction = Function.Builder.create(this, "GetProductsFunction")
                 .runtime(Runtime.JAVA_17)
                 .handler("com.myorg.handlers.AllProductsHandler::handleRequest")
@@ -35,10 +46,25 @@ public class ProductServiceStack extends Stack {
                 .timeout(Duration.seconds(30))
                 .build();
 
+        Function createProductsFunction = Function.Builder.create(this, "CreateProductsFunction")
+                .runtime(Runtime.JAVA_17)
+                .handler("com.myorg.handlers.CreateProductHandler::handleRequest")
+                .code(Code.fromAsset("target/product-service-1.0.0-jar-with-dependencies.jar"))
+                .timeout(Duration.seconds(30))
+                .build();
+
         LambdaRestApi api = LambdaRestApi.Builder.create(this, "ProductApi")
                 .handler(getProductsFunction)
                 .deployOptions(StageOptions.builder().stageName("dev").build())
                 .build();
+
+        productsTable.grantFullAccess(getProductsFunction);
+        productsTable.grantFullAccess(getProductByIdFunction);
+        productsTable.grantFullAccess(createProductsFunction);
+
+        stocksTable.grantFullAccess(getProductByIdFunction);
+        stocksTable.grantFullAccess(getProductsFunction);
+        stocksTable.grantFullAccess(createProductsFunction);
 
 
         Resource resource = api.getRoot().addResource("products");
@@ -47,6 +73,8 @@ public class ProductServiceStack extends Stack {
 
         resource.addResource("{id}")
                 .addMethod("GET", new LambdaIntegration(getProductByIdFunction), methodOptions());
+
+        resource.addMethod("POST", new LambdaIntegration(createProductsFunction), methodOptions());
     }
 
     private MethodOptions methodOptions() {

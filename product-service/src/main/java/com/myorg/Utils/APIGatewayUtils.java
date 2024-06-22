@@ -33,4 +33,12 @@ public class APIGatewayUtils {
                 .withBody("Product not found")
                 .build();
     }
+
+    public static APIGatewayV2HTTPResponse createInvalidDataResponse() {
+        return APIGatewayV2HTTPResponse.builder()
+                .withStatusCode(400)
+                .withHeaders(HEADERS)
+                .withBody("Data invalid")
+                .build();
+    }
 }

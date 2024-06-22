@@ -1,0 +1,14 @@
+Resources:
+  GetProductsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: com.myorg.handlers.AllProductsHandler::handleRequest
+      Runtime: java17
+      CodeUri: target/product-service-1.0.0-jar-with-dependencies.jar
+      Timeout: 30
+      Events:
+        GetAllProductsApiEvent:
+          Type: Api
+          Properties:
+            Path: /products
+            Method: get

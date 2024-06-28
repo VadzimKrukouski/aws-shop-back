@@ -13,7 +13,15 @@ import lombok.experimental.FieldDefaults;
 public class Product {
 
     String id;
+    String title;
     String description;
     double price;
+    int count;
 
+    public Product(String id, String title, String description, double price) {
+        this.id = id;
+        this.title = title;
+        this.description = description;
+        this.price = price;
+    }
 }

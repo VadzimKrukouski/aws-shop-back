@@ -8,6 +8,7 @@ import com.amazonaws.services.lambda.runtime.logging.LogLevel;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.CopyObjectRequest;
+import com.amazonaws.services.s3.model.DeleteObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
 import com.opencsv.CSVReader;
 
@@ -42,11 +43,15 @@ public class ImportFileParserHandler implements RequestHandler<S3Event, String> 
             }
 
             String newKey = objectKey.replace(uploadedFolder, parsedFolder);
+            logger.log("Upload folder: " + objectKey, LogLevel.INFO);
+            logger.log("Parsed folder: " + newKey, LogLevel.INFO);
             CopyObjectRequest copyObjectRequest = new CopyObjectRequest(bucketName, objectKey, bucketName, newKey);
             s3Client.copyObject(copyObjectRequest);
 
+            DeleteObjectRequest deleteObjectRequest = new DeleteObjectRequest(bucketName, objectKey);
+
             // Удалить файл из папки uploaded
-            s3Client.deleteObject(bucketName, objectKey);
+            s3Client.deleteObject(deleteObjectRequest);
         });
         logger.log("Parsing completed", LogLevel.INFO);
 

@@ -33,11 +33,15 @@ public class ImportProductsFileHandler implements RequestHandler<APIGatewayV2HTT
                 return APIGatewayUtils.createInvalidDataResponse();
             }
 
-            String objectKey = uploadedFolder + fileName;
+            String objectKey = uploadedFolder +"/" + fileName;
+            Date expiration = new Date();
+            long expirationTime = expiration.getTime();
+            expirationTime += 1000*60*60*12;
+            expiration.setTime(expirationTime);
 
             GeneratePresignedUrlRequest generatePresignedUrlRequest = new GeneratePresignedUrlRequest(bucketName, objectKey)
                     .withMethod(HttpMethod.PUT)
-                    .withExpiration(new Date());
+                    .withExpiration(expiration);
 
             URL url = s3Client.generatePresignedUrl(generatePresignedUrlRequest);
             logger.log("url - " + url.toString(), LogLevel.INFO);

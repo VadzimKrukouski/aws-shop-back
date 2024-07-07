@@ -12,7 +12,7 @@ public class DaoUtils {
         String id = item.get("id").s();
         String title = item.get("title").s();
         String description = item.get("description").s();
-        int price = Integer.parseInt(item.get("price").n());
+        double price = Double.parseDouble(item.get("price").n());
 
         return new Product(id, title, description, price);
     }

@@ -10,22 +10,16 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.myorg.Utils.APIGatewayUtils;
 import com.myorg.dto.Product;
+import com.myorg.service.DynamoDbService;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
-import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
-import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
 
 public class CreateProductHandler implements RequestHandler<APIGatewayV2HTTPEvent, APIGatewayV2HTTPResponse> {
-    private final static String productsTableName = "Products";
-    private final static String stocksTableName = "Stocks";
 
-    private final DynamoDbClient dynamoDbClient;
+    private final DynamoDbService dynamoDbService;
 
     public CreateProductHandler() {
-        this.dynamoDbClient = DynamoDbClient.create();
+        DynamoDbClient dynamoDbClient = DynamoDbClient.create();
+        this.dynamoDbService = new DynamoDbService(dynamoDbClient);
     }
 
     @Override
@@ -37,34 +31,9 @@ public class CreateProductHandler implements RequestHandler<APIGatewayV2HTTPEven
             Product product = mapper.readValue(event.getBody(), Product.class);
             logger.log("Create new product " + product.toString(), LogLevel.INFO);
 
-            String id = UUID.randomUUID().toString();
-            product.setId(id);
+            String productId = dynamoDbService.createItemProduct(product);
+            dynamoDbService.createItemStock(productId, product.getCount());
 
-            // Добавление в таблицу Products
-            Map<String, AttributeValue> productItem = new HashMap<>();
-            productItem.put("id", AttributeValue.builder().s(product.getId()).build());
-            productItem.put("title", AttributeValue.builder().s(product.getTitle()).build());
-            productItem.put("description", AttributeValue.builder().s(product.getDescription()).build());
-            productItem.put("price", AttributeValue.builder().n(Double.toString(product.getPrice())).build());
-
-            PutItemRequest productPutRequest = PutItemRequest.builder()
-                    .tableName(productsTableName)
-                    .item(productItem)
-                    .build();
-
-            dynamoDbClient.putItem(productPutRequest);
-
-            // Добавление в таблицу Stocks
-            Map<String, AttributeValue> stockItem = new HashMap<>();
-            stockItem.put("product_id", AttributeValue.builder().s(id).build());
-            stockItem.put("count", AttributeValue.builder().n(String.valueOf(product.getCount())).build());
-
-            PutItemRequest stockPutRequest = PutItemRequest.builder()
-                    .tableName(stocksTableName)
-                    .item(stockItem)
-                    .build();
-
-            dynamoDbClient.putItem(stockPutRequest);
             logger.log("Created", LogLevel.INFO);
             return APIGatewayUtils.createOkResponse("Created!");
         } catch (JsonProcessingException e) {

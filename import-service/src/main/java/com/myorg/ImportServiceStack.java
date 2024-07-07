@@ -1,5 +1,10 @@
 package com.myorg;
 
+import com.amazonaws.services.sqs.AmazonSQS;
+import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
+import com.amazonaws.services.sqs.model.GetQueueAttributesRequest;
+import com.amazonaws.services.sqs.model.GetQueueAttributesResult;
+import com.amazonaws.services.sqs.model.QueueAttributeName;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.Stack;
@@ -11,6 +16,9 @@ import software.amazon.awscdk.services.lambda.Function;
 import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.s3.*;
 import software.amazon.awscdk.services.s3.notifications.LambdaDestination;
+import software.amazon.awscdk.services.sqs.IQueue;
+import software.amazon.awscdk.services.sqs.Queue;
+import software.amazon.awscdk.services.sqs.QueueAttributes;
 import software.constructs.Construct;
 
 import java.util.HashMap;
@@ -69,8 +77,21 @@ public class ImportServiceStack extends Stack {
                 .timeout(Duration.seconds(30))
                 .build();
 
+        AmazonSQS amazonSQS = AmazonSQSClientBuilder.defaultClient();
+        String queueName = "catalogItemsQueue";
+        String queueUrl = amazonSQS.getQueueUrl(queueName).getQueueUrl();
+        GetQueueAttributesRequest request = new GetQueueAttributesRequest(queueUrl, List.of(QueueAttributeName.QueueArn.name()));
+        GetQueueAttributesResult response = amazonSQS.getQueueAttributes(request);
+        String queueArn = response.getAttributes().get(QueueAttributeName.QueueArn.name());
+        IQueue queue = Queue.fromQueueAttributes(this, "GetQueue", QueueAttributes.builder()
+                .queueArn(queueArn)
+                .queueName(queueName)
+                .build());
+
         importFileParserLambda.addEnvironment("UPLOADED_FOLDER", "uploaded");
         importFileParserLambda.addEnvironment("PARSED_FOLDER", "parsed");
+        importFileParserLambda.addEnvironment("QUEUE_URL", queue.getQueueUrl());
+        queue.grantSendMessages(importFileParserLambda);
 
         bucket.grantReadWrite(importFileParserLambda);
 

@@ -1,5 +1,5 @@
-id,title,description,price
-10,Product A,Description of Product A,10.99
-20,Product B,Description of Product B,15.49
-30,Product C,Description of Product C,7.99
-40,Product D,Description of Product D,20.00
+id,title,description,price,count
+10,Product A,Description of Product A,10.99,1
+20,Product B,Description of Product B,15.49,2
+30,Product C,Description of Product C,7.99,1
+40,Product D,Description of Product D,20.00,2

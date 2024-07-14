@@ -11,6 +11,7 @@
     <modules>
         <module>product-service</module>
         <module>import-service</module>
+        <module>authorization-service</module>
     </modules>
 
 </project>

@@ -8,7 +8,9 @@ public class APIGatewayUtils {
 
     public static final Map<String, String> HEADERS = Map.of(
             "Content-Type", "application/json",
-            "Access-Control-Allow-Origin", "*");
+            "Access-Control-Allow-Origin", "*",
+            "Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS",
+            "Access-Control-Allow-Headers", "Authorization,Content-Type");
 
     public static APIGatewayV2HTTPResponse createErrorResponse(String reason) {
         return APIGatewayV2HTTPResponse.builder()
